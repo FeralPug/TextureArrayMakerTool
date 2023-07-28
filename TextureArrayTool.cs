@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 
 public class TextureArrayTool : EditorWindow
@@ -140,10 +140,29 @@ public class TextureArrayTool : EditorWindow
 
                     Texture2DArray texArray = new Texture2DArray(textureXResolution, textureYResolution, numberOfTextures, textureFormat, generateMipMaps);
 
+                    var currentActiveRT = RenderTexture.active;
+                    var rt = RenderTexture.GetTemporary(textureXResolution, textureYResolution, 0);
+                    var tempTexture2D = new Texture2D(textureXResolution, textureYResolution);
+                    var rect = new Rect(0, 0, textureXResolution, textureYResolution);
+
                     for (int i = 0; i < texture2Ds.Length; i++)
                     {
-                        texArray.SetPixels(texture2Ds[i].GetPixels(), i);
+                        if (texture2Ds[i].height != textureYResolution || texture2Ds[i].width != textureXResolution)
+                        {
+                            Graphics.Blit(texture2Ds[i], rt);
+                            RenderTexture.active = rt;
+                            tempTexture2D.ReadPixels(rect, 0, 0);
+                            texArray.SetPixels(tempTexture2D.GetPixels(), i);
+                        }
+                        else
+                        {
+                            texArray.SetPixels(texture2Ds[i].GetPixels(), i);
+                        }
+                        
                     }
+
+                    RenderTexture.active = currentActiveRT;
+                    RenderTexture.ReleaseTemporary(rt);
 
                     texArray.Apply();
 
